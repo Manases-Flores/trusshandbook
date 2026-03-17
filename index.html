@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>The Truss Handbook</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:system-ui,sans-serif;background:#f0f4ff;}</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const{useState,useRef,useCallback,useEffect}=React;
+
+const navItems=[
+  {id:"process",emoji:"🗺️",label:"Sales Process"},
+  {id:"loanprocess",emoji:"📁",label:"Loan Process"},
+  {id:"script",emoji:"📞",label:"Call Script"},
+  {id:"objections",emoji:"🛡️",label:"Objections"},
+  {id:"text",emoji:"💬",label:"Text Template"},
+  {id:"programs",emoji:"📋",label:"Our Programs"},
+];
+
+const tips=[
+  "🔥 Start the prequal ON the call. Don't send a link and hope.",
+  "💡 Find the pain first. Then position the solution.",
+  "📲 Text your name and number while you're still on the phone.",
+  "🎯 Finish SLICE while keeping the conversation natural.",
+  "💬 Every stall has an unspoken objection. Find it.",
+  "🏆 We specialize in self-employed — lean into it.",
+  "🧠 Junior is a mindset. Leave it at the door before every call.",
+  "⚡ Speed is trust. The faster you move, the more confident you sound.",
+  "🎯 The borrower doesn't know what they need — you do. Lead them.",
+  "🔄 If the HELOC doesn't work, you have 9 other programs. You always have a next move.",
+  "📞 Your tone is your close. Sound like you've done this a thousand times.",
+  "💪 Don't ask for permission to start the application. Just start it.",
+  "🧩 SLICE isn't a form — it's a conversation. Make it feel that way.",
+  "🏡 You're not selling a rate. You're solving a problem that's been keeping them up at night.",
+  "👂 The borrower will tell you exactly how to close them — if you listen.",
+  "🚀 The LO who starts the app on the call wins. Every time.",
+  "🤝 When you send that text mid-call, you stop being a stranger.",
+  "📊 Know your programs cold. Confidence comes from knowing you always have an option.",
+  "🔍 Dig deeper than the surface. The real pain is always one more question away.",
+  "💰 A borrower who feels understood will close. A borrower who feels sold will ghost.",
+  "⏱️ Every minute you wait to start the application is a minute for doubt to creep in.",
+  "🌟 You represent the #2 mortgage brokerage in the country for self-employed loans. Show up like it.",
+];
+
+const processSteps=[
+  {step:1,title:"Warm Greeting",detail:"Introduce yourself by name, mention your company, and confirm you're speaking with the right person."},
+  {step:2,title:"Quick Needs Assessment",detail:'Ask: "Tell me a bit about yourself and what you\'re looking to get done — that way I can point you in the right direction and tell you a bit about who we are and how we can help." While they talk, listen actively and fill out SLICE.'},
+  {step:3,title:"Find the Pain & Dig Deeper",detail:"Go beneath the surface — find out what's really driving their need. If they're self-employed, engage them about their business."},
+  {step:4,title:"Set the Stage",detail:'"Good news — we actually have multiple programs that can solve this. I just need a few more pieces of information to put the full picture together for you."'},
+  {step:5,title:"Present the HELOC & Start the Prequal",detail:"If the HELOC fits, tell them confidently. Don't ask for permission. Start the prequal application with the info you've already gathered."},
+  {step:6,title:"Review the Offer Together",detail:"Ask them to check their inbox for the offer while you're on the call. Walk through it together and push them to accept."},
+  {step:7,title:"Lock Them In & Send the Text",detail:"Tell them they're locked in and that you're their loan officer for life. Then shoot them a text with your name and direct number."},
+];
+
+const altProcessSteps=[
+  {step:1,title:"Warm Greeting & Needs Assessment",detail:"Same foundation as always — introduce yourself, find the pain, fill out SLICE.",tag:null},
+  {step:2,title:"Do You Know the Program?",detail:"This is the fork in the road. If you know what program fits — go to Step 3. If not — go to Step 4.",tag:"decision"},
+  {step:3,title:"Present the Program + Plan B",detail:"Present with confidence. Always show a Plan B — this proves we have options.",tag:"known"},
+  {step:4,title:"Don't Know Yet? Set the Callback",detail:'Be upfront and set a specific callback time. Send a Google Calendar invite on the spot.\n\n⚠️ "I\'ll send you an email" is the absolute last resort.',tag:"unknown"},
+  {step:5,title:"Send the Stips List Over the Phone",detail:"Once the program is selected, send the stips list while you're still on the call.",tag:"known"},
+  {step:6,title:"Send the Text & Ask Them to Save Your Number",detail:"Shoot the borrower a text asking them to add you to their contacts.",tag:null},
+  {step:7,title:"Borrower Sends Prequal Docs → Run the Soft Check & Income Calc",detail:"Once docs come in, run the soft credit check and income calculation.",tag:null},
+  {step:8,title:"Build the 3-Option Email",detail:"Present three options:\n\n1. Par rate — standard rate, standard closing costs\n2. Slightly higher rate — lender pays some closing costs\n3. Even higher rate — lender pays more, lowest out-of-pocket",tag:null},
+  {step:9,title:"Call Before You Send the Email",detail:"Always call before hitting send. Walk through options live to handle objections in real time.",tag:null},
+  {step:10,title:"Borrower Likes the Numbers? Get the Rest of the Stips",detail:"Collect remaining documents and put the full application together.",tag:null},
+];
+
+const loanProcessSteps=[
+  {step:1,title:"Send Initial Disclosures",detail:"Borrower must sign to officially move the loan into Processing.",icon:"📄"},
+  {step:2,title:"File Moved to Processing",detail:"Jocelyn will order the appraisal and handle admin work including title, payoff, and updated homeowners insurance.",icon:"📦"},
+  {step:3,title:"Processor Awaits Loan Approval",detail:"File is with the underwriter. Processor is monitoring and waiting for the approval decision.",icon:"⏳"},
+  {step:4,title:"Approval Received → Request Conditions",detail:"Processor reaches out to the borrower to collect any conditions required by the underwriter.",icon:"✅"},
+  {step:5,title:"Conditions Cleared → Clear to Close",detail:"All conditions satisfied. File moves to Clear to Close (CTC).",icon:"🟢"},
+  {step:6,title:"Schedule Closing",detail:"Processor coordinates and schedules the closing appointment with the borrower.",icon:"📅"},
+  {step:7,title:"Scheduled Closing → Review Final CD",detail:"Processor sends you the final Closing Disclosure for review before borrower signs.",icon:"📋"},
+  {step:8,title:"Borrower Signs → FUNDED! 🎉",detail:"Once the borrower signs at closing, the loan funds. That's the finish line.",icon:"💰",funded:true},
+];
+
+const scriptSections=[
+  {label:"Opening",lines:['"Hey [Name], this is [Your Name] over at Truss Financial Group — how are you doing today?"','"I\'m reaching out because it looks like you may have some equity in your home and I wanted to see if we could put that to work for you."']},
+  {label:"Needs Discovery",lines:['"Tell me a bit about yourself and what you\'re looking to get done — that way I can point you in the right direction and tell you a bit about who we are and how we can help."','"Got it. And is there a timeline you\'re working with, or are you just exploring your options right now?"']},
+  {label:"Introducing the HELOC",lines:['"So what we have is an automated HELOC — it\'s a really clean process, mostly done online, but I\'ll be right here with you the whole time so nothing gets confusing."','"A lot of our borrowers love it because it\'s fast and straightforward."']},
+  {label:"The Push to Apply Now",lines:['"I\'d love to just get this started with you right now while I have you — takes just a few minutes and I can answer anything that comes up as we go."']},
+  {label:"Closing",lines:['"Awesome, let\'s get this locked in for you. I\'ll walk you through each step."','"And hey, I\'m texting you my direct number right now — if anything comes up later, just shoot me a message."']},
+];
+
+const objections=[
+  {tag:"Rate",q:"What's your rate?",psychology:"Borrower is trying to control the conversation.",a:'"Great question. Rates depend on a few factors like equity, credit profile, and income structure. What I want to make sure first is that the program actually works for your situation, then we can dial in the exact numbers."'},
+  {tag:"Rate",q:"Another lender offered me a lower rate.",psychology:"Borrower is testing you.",a:'"That sounds like a strong offer. Just so I understand, what made you hesitate to move forward with them? And just out of curiosity — did they actually qualify your income yet, or is that still something they need to look into?"'},
+  {tag:"Rate",q:"Your rate seems high.",psychology:"Comparison objection.",a:'"I hear that a lot when borrowers are comparing quotes. The big thing we want to make sure is that the structure actually works so you don\'t end up with something that falls apart later. A slightly lower rate that doesn\'t close doesn\'t fix that."'},
+  {tag:"Stall",q:"Just send me the information.",psychology:"Brush-off objection.",a:'"Of course, I can send that over. Before I do, let me just ask you this — if everything we discussed actually solves what you\'re looking to accomplish, is there anything that would stop you from moving forward?"'},
+  {tag:"Stall",q:"I need to think about it.",psychology:"Unspoken objection.",a:'"Of course. Just so I understand, is there something specific you\'re thinking through or are you just making sure everything makes sense?"'},
+  {tag:"Stall",q:"I'll fill out the application later.",psychology:"Momentum loss.",a:'"No problem. It only takes about five minutes and I can walk you through it so nothing gets filled out incorrectly. But if now really isn\'t a good time, let\'s lock in a time — I\'ll send you a Google Calendar invite right now so it\'s on the books."'},
+  {tag:"Stall",q:"I'm just looking right now.",psychology:"Low commitment.",a:'"Totally fair. Most borrowers start by exploring options. The goal here is just to see what actually works for your situation."'},
+  {tag:"Stall",q:"Let me talk to my spouse.",psychology:"Decision authority objection.",a:'"Of course. What questions do you think they might have so we can make sure everything is clear before you discuss it?"'},
+  {tag:"Shopping",q:"I'm talking to other lenders.",psychology:"Borrower wants validation.",a:'"That actually makes sense. Most borrowers compare options. What I want to make sure is that the structure actually works so you don\'t end up going down the wrong path."'},
+  {tag:"Shopping",q:"My bank offered me something.",psychology:"Brand authority bias.",a:'"That makes sense. Banks can be a good option depending on the situation. What did they say about qualifying your income? Or did they give you that rate without fully looking into your income yet?"'},
+  {tag:"Shopping",q:"I need to compare options.",psychology:"Decision delay.",a:'"That makes sense. What I want to make sure is that you\'re comparing the right things, because sometimes the lowest quote isn\'t always the one that actually closes."'},
+  {tag:"Trust",q:"Why do you need my Social Security number?",psychology:"Trust objection.",a:'"Great question. Every lender needs to verify identity before issuing a real offer. It protects both you and the lender from fraud and ensures the information is tied to the correct borrower."'},
+  {tag:"Trust",q:"How do I know this is legit?",psychology:"Trust / credibility.",a:'"That\'s a fair question — especially with how many lenders are out there. We\'ve been in the industry for years and you can actually look us up on Yelp and the Better Business Bureau. Our company has been recognized in the Scotsman Guide — think of it like the Forbes list of mortgage. And just so you know, we\'re actually #2 in the country for these kinds of loans."'},
+  {tag:"Trust",q:"How did you get my information?",psychology:"Privacy concern.",a:'"You actually submitted a request for more information while you were going through our site. When someone does that, our team follows up to see if we can help and walk you through the process."'},
+  {tag:"Trust",q:"Are you a lender or broker?",psychology:"Borrower wants clarity.",a:'"We\'re a mortgage brokerage. That actually works in your favor because we\'re not tied to just one bank\'s guidelines. We work with multiple lenders and specialized programs — especially helpful for self-employed borrowers since traditional banks usually rely strictly on tax returns."'},
+  {tag:"Trust",q:"Why should I work with you?",psychology:"Value challenge.",a:'"We specialize specifically in self-employed borrowers — it\'s literally what we do. We have in-house processors and quality coordinators who\'ve done thousands of these loans. That saves you time, protects your credit, and gives you the best shot at getting this done. We\'re ranked #2 in the country for these kinds of loans."'},
+  {tag:"Credit",q:"I don't want my credit pulled.",psychology:"Fear of damage.",a:'"Totally understandable. In many cases we can start with a soft check so it doesn\'t impact your credit score while we review the options."'},
+  {tag:"Fees",q:"That fee seems high.",psychology:"Price shock.",a:'"I completely understand wanting the best value. Every loan has cost somewhere, either upfront or built into the rate. What matters most is the overall structure and how it benefits you long term."'},
+  {tag:"Fees",q:"Another lender said they don't charge fees.",psychology:"Hidden rate tradeoff.",a:'"That\'s definitely possible. Usually when lenders say no fees, the cost is built into the rate. What matters most is the overall structure and which option saves you more over time."'},
+  {tag:"Fees",q:"But doesn't that mean I pay more fees?",psychology:"Follow-up to broker explanation.",a:'"Not necessarily. One of the advantages of working with a broker is that we can structure the loan based on what matters most to you. Some borrowers prefer a slightly lower rate with standard fees, while others prefer a slightly higher rate with lower upfront costs. We can compare and structure it the way that makes the most sense for you."'},
+  {tag:"Ego",q:"I already know how these loans work.",psychology:"Ego defense.",a:'"Sounds like you\'ve done some homework. What roadblocks have you run into so far?"'},
+];
+
+const tags=["All","Rate","Stall","Shopping","Trust","Credit","Fees","Ego"];
+const tagColors={Rate:"#4a7fd4",Stall:"#e67e22",Shopping:"#8e44ad",Trust:"#27ae60",Credit:"#c0392b",Fees:"#16a085",Ego:"#2c3e50"};
+const textTemplate="[Your Name] with Truss Financial Group, Your favorite loan officer! Ask Me anything!";
+const loanTimelineTemplate="Hey [Borrower Name]! 👋 Here's a quick breakdown of what to expect during your loan process:\n\n1️⃣ Initial Disclosures — Please sign these ASAP so we can get your file moving!\n\n2️⃣ Processing — Once signed, we'll order your appraisal and take care of all the admin work.\n\n3️⃣ Underwriting — Your file goes to the underwriter for approval. We'll keep you posted!\n\n4️⃣ Conditions — After approval, we may need a few additional documents from you.\n\n5️⃣ Clear to Close — Once everything is cleared, you're clear to close! 🎉\n\n6️⃣ Closing — We'll schedule your closing appointment.\n\n7️⃣ Funded! — After you sign at closing, your loan funds. That's the finish line! 💰\n\n⏱️ The whole process typically takes 25–30 days. I'm here every step of the way!";
+
+const programs=[
+  {emoji:"⚡",name:"Automated HELOC",tag:"Primary",tagColor:"#27ae60",when:"Best for borrowers with consistent deposits. Fastest path to approval — always present first.",fico:"680+",highlights:["Free AVM included","Fully automated process","Start on the call"],transfer:null},
+  {emoji:"🏘️",name:"DSCR — Investor Cash Flow",tag:"Investment",tagColor:"#4a7fd4",when:"Client wants an investment property but can't qualify using personal income. Uses rental income instead.",fico:"620+",highlights:["Rental income to qualify","No personal income needed","No-Ratio options at lower LTVs"],transfer:null},
+  {emoji:"🏦",name:"Bank Statements",tag:"Self-Employed",tagColor:"#8e44ad",when:"Self-employed client has strong deposits but low income on tax returns.",fico:"640+",highlights:["12–24 months statements","Business or personal","$150k minimum","Manual income review"],transfer:null},
+  {emoji:"📊",name:"P&L Only",tag:"Self-Employed",tagColor:"#8e44ad",when:"Self-employed client can provide a CPA-prepared P&L but lacks bank statement documentation.",fico:"680+",highlights:["CPA-prepared P&L","12–24 months","Your CPA or ours","No bank statements needed"],transfer:null},
+  {emoji:"💰",name:"Asset Utilization",tag:"Asset-Based",tagColor:"#e67e22",when:"Client has significant liquid or retirement assets but can't qualify on traditional income.",fico:"600+",highlights:["Checking/Savings = 100%","IRA/Stocks = 70–80%","Assets ÷ 60 months = monthly income"],transfer:null},
+  {emoji:"🚫",name:"No-Income (Consumer No-Ratio)",tag:"No Income Needed",tagColor:"#c0392b",when:"Client has excellent credit and assets but wants to avoid using income or DTI.",fico:"620+ (1st) · 700+ (HELOC)",highlights:["No employment needed","No DTI used","HELOC up to 60% CLTV","Owner-occupied or 2nd home only"],transfer:null},
+  {emoji:"🔄",name:"Reverse Mortgage",tag:"Senior Product",tagColor:"#16a085",when:"Senior borrower (62+) looking to access home equity without a monthly payment.",fico:"No min FICO",highlights:["Lump sum or HELOC","No monthly payment","Based on age + equity","Primary residence only"],transfer:{label:"Transfer this borrower to:",color:"#16a085",contacts:[{name:"Cesar",role:"Reverse Mortgage Specialist"},{name:"Abrahim",role:"Reverse Mortgage Specialist"},{name:"Arnold",role:"Reverse Mortgage Specialist"}],note:null}},
+  {emoji:"🔨",name:"Hard Money — Fix & Flip",tag:"Investor",tagColor:"#2c3e50",when:"Investor needs fast financing to purchase and renovate a property for resale.",fico:"Varies",highlights:["Asset-based lending","Fast closings","Short-term loan"],transfer:{label:"Transfer this borrower to:",color:"#2c3e50",contacts:[{name:"Reza",role:"Hard Money / Fix & Flip"}],note:"If Reza doesn't take it — nurture the borrower and move on."}},
+  {emoji:"🏢",name:"Commercial Loans",tag:"Commercial",tagColor:"#7f8c8d",when:"Borrower is looking for a commercial property loan.",fico:"Varies",highlights:["Referral to partner","Commercial properties","Not handled in-house"],transfer:{label:"Connect borrower with our referral partner:",color:"#7f8c8d",contacts:[{name:"Dav Davis",role:"Commercial Referral Partner"}],note:null}},
+  {emoji:"🏗️",name:"Construction Loans",tag:"Construction",tagColor:"#2c3e50",when:"Borrower needs financing for new construction or major renovation projects.",fico:"Varies",highlights:["Ground-up or renovation","Transfer to Reza"],transfer:{label:"Transfer this borrower to:",color:"#2c3e50",contacts:[{name:"Reza",role:"Construction / Hard Money"}],note:"If Reza doesn't take it — nurture the borrower and move on."}},
+];
+
+const nurtureMatrix=[
+  {category:"LTV",threshold:"Above 90%"},
+  {category:"FICO",threshold:"Below 600"},
+  {category:"Loan Amount",threshold:"Under $150,000"},
+  {category:"State",threshold:"ND, SD, UT"},
+  {category:"State",threshold:"NV (Champions Only)"},
+  {category:"Units",threshold:"Over 12 Units"},
+  {category:"Acreage",threshold:"Over 20 Acres"},
+  {category:"Property Type",threshold:"Working Farm"},
+  {category:"Property Type",threshold:"Assisted Living Facility"},
+  {category:"Bad Number",threshold:"Verify Bad Phone Number"},
+  {category:"Borrower Age",threshold:"Under 18"},
+  {category:"Hard Money",threshold:"If Reza Not Available"},
+  {category:"Fix & Flip",threshold:"If Reza Not Available"},
+];
+
+const decisionTree=[
+  {q:"Does the loan meet any hard disqualifier in the matrix?",yes:"→ Nurture. Send to shark tank.",no:"Keep going ↓"},
+  {q:"Is the loan amount $500k or above?",yes:"→ Get Team Lead / Sales Manager approval before nurturing.",no:"Keep going ↓"},
+  {q:"Is this a product or scenario outside your program knowledge?",yes:"→ Transfer to Team Lead before nurturing.",no:"Keep going ↓"},
+  {q:"Have you explored ALL available programs?",yes:"Keep going ↓",no:"→ Do not nurture yet. Review Our Programs tab first."},
+  {q:"Is Reza available for Hard Money / Fix & Flip?",yes:"→ Transfer to Reza.",no:"→ Nurture."},
+];
+
+const BLANK_FORM={fico:"",cltv:"",loanAmount:"",dti:"",occupancy:"primary",lienPosition:"2nd",propertyType:"sfr",empType:"w2"};
+
+function checkNFTY(f){
+  const fico=parseInt(f.fico)||0,cltv=parseFloat(f.cltv)||0,loanAmt=parseFloat(f.loanAmount)||0,dti=parseFloat(f.dti)||0,occ=f.occupancy,lien=f.lienPosition,propType=f.propertyType;
+  const nftyIssues=[],nftyWarnings=[];
+  if(fico<640)nftyIssues.push("FICO below 640 minimum");
+  if(occ==="investment"&&fico<700)nftyIssues.push("Investment property requires 700+ FICO for NFTY");
+  if(loanAmt<25000)nftyIssues.push("Loan amount below $25,000 minimum");
+  if(loanAmt>500000)nftyIssues.push("Loan amount exceeds $500,000 max");
+  if(fico>=680&&dti>50)nftyIssues.push("DTI exceeds 50% max (680+ FICO)");
+  if(fico>=640&&fico<680&&dti>45)nftyIssues.push("DTI exceeds 45% max (640–679 FICO)");
+  if(lien==="3rd")nftyIssues.push("NFTY does not offer 3rd lien position (1st or 2nd only)");
+  if(loanAmt>=350000)nftyWarnings.push("⚠️ Loan ≥ $350k — ALTA title policy required");
+  if(loanAmt>0&&loanAmt<350000)nftyWarnings.push("ℹ️ Loan < $350k — Legal & Vesting Report only, no title insurance required");
+  if(lien==="2nd")nftyWarnings.push("ℹ️ Hazard insurance NOT required for 2nd lien HELOCs");
+  if(occ==="investment")nftyWarnings.push("ℹ️ Investment properties limited to 10 financed properties");
+  nftyWarnings.push("⚠️ LLCs are ineligible — must close as Sole Ownership, Joint, or Revocable Trust");
+  const closingTime=occ==="primary"?"5 business days + 3-day rescission":"As few as 5 business days, same-day funding";
+  nftyWarnings.push("⏱️ Closing timeline: "+closingTime);
+  let nftyCLTV=0;
+  if(occ==="primary"){if(fico>=700)nftyCLTV=80;else if(fico>=680)nftyCLTV=75;else if(fico>=660)nftyCLTV=70;else if(fico>=640)nftyCLTV=65;}
+  else if(occ==="second"){if(fico>=740)nftyCLTV=75;else if(fico>=720)nftyCLTV=70;else if(fico>=680)nftyCLTV=65;else if(fico>=660)nftyCLTV=60;else if(fico>=640)nftyCLTV=60;}
+  else if(occ==="investment"&&fico>=700)nftyCLTV=70;
+  if(nftyCLTV>0&&cltv>nftyCLTV)nftyIssues.push("CLTV "+cltv+"% exceeds NFTY max of "+nftyCLTV+"% for this scenario");
+  const figureIssues=[],figureWarnings=[];
+  if(occ==="primary"&&fico<640)figureIssues.push("FICO below 640 minimum for Deep Haven primary");
+  if((occ==="second"||occ==="investment")&&fico<680)figureIssues.push("FICO below 680 minimum for Deep Haven non-owner occupied");
+  if(loanAmt<25000)figureIssues.push("Loan amount below $25,000 minimum");
+  if(loanAmt>750000)figureIssues.push("Loan amount exceeds $750,000 max");
+  if(dti>=50)figureIssues.push("DTI must be under 50%");
+  if(lien==="3rd"&&fico<680)figureIssues.push("3rd lien requires 680+ FICO for Deep Haven");
+  if(lien==="3rd"&&cltv>70)figureIssues.push("3rd lien capped at 70% CLTV for Deep Haven");
+  if(lien==="3rd"&&(occ==="second"||occ==="investment"))figureIssues.push("3rd lien only available on primary for Deep Haven");
+  figureWarnings.push("⚠️ EPO triggered if >90% is paid off within 16 weeks");
+  figureWarnings.push("⚠️ Title seasoning: 90 days from purchase or 45 days from prior refi");
+  figureWarnings.push("ℹ️ Draw period options: 2yr, 3yr, 4yr, or 5yr — 100% initial draw required");
+  let figureCLTV=0;
+  if(occ==="primary"){
+    if(lien==="1st")figureCLTV=fico>=740?85:fico>=680?80:75;
+    else if(lien==="2nd")figureCLTV=fico>=740?85:fico>=680?85:fico>=660?80:75;
+    else if(lien==="3rd")figureCLTV=70;
+  }else{figureCLTV=lien==="1st"?80:70;}
+  if(figureCLTV>0&&cltv>figureCLTV)figureIssues.push("CLTV "+cltv+"% exceeds Deep Haven max of "+figureCLTV+"% for this scenario");
+  return{nftyGood:nftyIssues.length===0,figureGood:figureIssues.length===0,nftyIssues,figureIssues,nftyWarnings,figureWarnings,nftyCLTV,figureCLTV};
+}
+
+function Panel({title,badge,children}){
+  return(
+    <div style={{background:"#fff",borderRadius:16,padding:22,border:"1px solid #dce8ff",marginTop:4}}>
+      <h2 style={{fontSize:17,fontWeight:700,color:"#1e3a5f",margin:"0 0 6px 0"}}>{title}</h2>
+      {badge&&<div style={{display:"inline-block",background:"#1e3a5f",color:"#f0c040",fontSize:12,fontWeight:700,borderRadius:8,padding:"4px 10px",marginBottom:16}}>{badge}</div>}
+      {children}
+    </div>
+  );
+}
+
+function NftyChecker({onClose,form,setForm,result,setResult}){
+  const set=(k,v)=>{setForm(p=>({...p,[k]:v}));setResult(null);};
+  const reset=()=>{setForm({...BLANK_FORM});setResult(null);};
+  const run=()=>{if(!form.fico||!form.cltv||!form.loanAmount||!form.dti)return;setResult(checkNFTY(form));};
+  const inp=(label,key,ph)=>(
+    <div style={{flex:1,minWidth:130}}>
+      <div style={{fontSize:11,fontWeight:700,color:"#5a7a9f",marginBottom:4}}>{label}</div>
+      <input type="number" value={form[key]} onChange={e=>set(key,e.target.value)} placeholder={ph}
+        style={{width:"100%",padding:"9px 10px",borderRadius:8,border:"1px solid #dce8ff",fontSize:14,boxSizing:"border-box",outline:"none"}}/>
+    </div>
+  );
+  const sel=(label,key,opts)=>(
+    <div style={{flex:1,minWidth:130}}>
+      <div style={{fontSize:11,fontWeight:700,color:"#5a7a9f",marginBottom:4}}>{label}</div>
+      <select value={form[key]} onChange={e=>set(key,e.target.value)}
+        style={{width:"100%",padding:"9px 10px",borderRadius:8,border:"1px solid #dce8ff",fontSize:14,boxSizing:"border-box",outline:"none",background:"#fff"}}>
+        {opts.map(o=><option key={o.v} value={o.v}>{o.l}</option>)}
+      </select>
+    </div>
+  );
+  const incomeInfo={
+    w2:{nfty:"Paystubs + W-2 · OR link payroll via TRUV · OR The Work Number",figure:"Paystubs via PointServ · OR link payroll · OR tax returns via PointServ",warn:null},
+    selfemployed:{nfty:"Link bank account via Plaid + prior 2 years tax returns",figure:"Link bank account via Plaid (180+ days history) + tax returns via PointServ (2 yrs)",warn:"Both require bank account linking — borrower must have accessible online banking."},
+    retired:{nfty:"Social Security / pension via TRUV or award letters. Tax returns for supplemental income.",figure:"Link asset accounts via Plaid (401k, IRA, brokerage) + award / COLA letters.",warn:"Figure uses asset depletion — assets ÷ loan term = qualifying income."},
+  };
+  const income=incomeInfo[form.empType]||incomeInfo.w2;
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.55)",zIndex:1300,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
+      <div style={{background:"#fff",borderRadius:"20px 20px 0 0",width:"100%",maxWidth:720,maxHeight:"92vh",overflowY:"auto",padding:24}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+          <div>
+            <h2 style={{margin:0,fontSize:18,color:"#1e3a5f",fontWeight:800}}>⚡ NFTY or Nah?</h2>
+            <p style={{margin:"4px 0 0",fontSize:12,color:"#888"}}>NFTY (Homebridge) vs Deep Haven eligibility check.</p>
+          </div>
+          <button onClick={onClose} style={{background:"none",border:"none",fontSize:22,cursor:"pointer",color:"#aaa"}}>✕</button>
+        </div>
+        <div style={{background:"#f0f4ff",borderRadius:12,padding:16,marginTop:14}}>
+          <div style={{fontSize:12,fontWeight:800,color:"#1e3a5f",marginBottom:10}}>📋 Loan Details</div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:10,marginBottom:10}}>
+            {inp("FICO Score","fico","e.g. 720")}
+            {inp("CLTV (%)","cltv","e.g. 75")}
+            {inp("Loan Amount ($)","loanAmount","e.g. 100000")}
+            {inp("DTI (%)","dti","e.g. 42")}
+          </div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:10}}>
+            {sel("Occupancy","occupancy",[{v:"primary",l:"Primary"},{v:"second",l:"2nd Home"},{v:"investment",l:"Investment"}])}
+            {sel("Lien Position","lienPosition",[{v:"1st",l:"1st Lien"},{v:"2nd",l:"2nd Lien"},{v:"3rd",l:"3rd Lien"}])}
+            {sel("Property Type","propertyType",[{v:"sfr",l:"SFR"},{v:"condo",l:"Condo"},{v:"pud",l:"PUD"},{v:"24unit",l:"2–4 Unit"},{v:"other",l:"Other"}])}
+          </div>
+          <div style={{borderTop:"1px solid #dce8ff",marginTop:14,paddingTop:14}}>
+            <div style={{fontSize:12,fontWeight:800,color:"#1e3a5f",marginBottom:10}}>💼 Income Qualification</div>
+            {sel("Employment Type","empType",[{v:"w2",l:"W-2 / Wage Earner"},{v:"selfemployed",l:"Self-Employed"},{v:"retired",l:"Retired / Asset-Based"}])}
+            <div style={{background:"#fff",borderRadius:10,padding:12,fontSize:13,color:"#444",lineHeight:1.8,border:"1px solid #dce8ff",marginTop:12}}>
+              <div style={{fontWeight:700,color:"#1e3a5f",marginBottom:8}}>📄 Accepted Income Docs</div>
+              <div style={{marginBottom:6}}><span style={{background:"#27ae60",color:"#fff",fontWeight:700,fontSize:11,borderRadius:6,padding:"2px 8px",marginRight:8}}>NFTY</span>{income.nfty}</div>
+              <div><span style={{background:"#4a7fd4",color:"#fff",fontWeight:700,fontSize:11,borderRadius:6,padding:"2px 8px",marginRight:8}}>Deep Haven</span>{income.figure}</div>
+              {income.warn&&<div style={{marginTop:10,background:"#fff3cd",borderRadius:8,padding:"8px 10px",fontSize:12,color:"#856404"}}>⚠️ {income.warn}</div>}
+            </div>
+          </div>
+          <div style={{display:"flex",gap:10,marginTop:14}}>
+            <button onClick={reset} style={{flex:"0 0 auto",background:"#fff",color:"#5a7a9f",border:"2px solid #dce8ff",borderRadius:10,padding:"13px 20px",fontWeight:700,fontSize:14,cursor:"pointer"}}>🔄 Reset</button>
+            <button onClick={run} style={{flex:1,background:"#1e3a5f",color:"#fff",border:"none",borderRadius:10,padding:"13px 0",fontWeight:800,fontSize:15,cursor:"pointer"}}>Run the Check 🔍</button>
+          </div>
+        </div>
+        {result&&(
+          <div style={{marginTop:20}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20}}>
+              <div style={{background:result.nftyGood?"#e8f5e9":"#fff3f3",border:"2px solid "+(result.nftyGood?"#27ae60":"#e74c3c"),borderRadius:14,padding:16}}>
+                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                  <span style={{fontSize:22}}>{result.nftyGood?"✅":"❌"}</span>
+                  <div><div style={{fontWeight:800,fontSize:14,color:"#1e3a5f"}}>NFTY</div><div style={{fontSize:11,color:"#888"}}>Homebridge Standalone HELOC</div></div>
+                </div>
+                <div style={{fontSize:12,fontWeight:700,color:result.nftyGood?"#27ae60":"#e74c3c"}}>{result.nftyGood?"✓ Eligible":"✗ Does Not Qualify"}</div>
+                {result.nftyGood&&<div style={{fontSize:11,color:"#555",marginTop:4}}>Max CLTV: <strong>{result.nftyCLTV}%</strong></div>}
+                {!result.nftyGood&&result.nftyIssues.map((iss,i)=><div key={i} style={{fontSize:11,color:"#c0392b",marginTop:4}}>• {iss}</div>)}
+                {result.nftyWarnings&&result.nftyWarnings.map((w,i)=><div key={i} style={{fontSize:11,color:"#856404",marginTop:4,background:"#fffbe6",borderRadius:6,padding:"3px 7px"}}>{w}</div>)}
+              </div>
+              <div style={{background:result.figureGood?"#e8f5e9":"#fff3f3",border:"2px solid "+(result.figureGood?"#27ae60":"#e74c3c"),borderRadius:14,padding:16}}>
+                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                  <span style={{fontSize:22}}>{result.figureGood?"✅":"❌"}</span>
+                  <div><div style={{fontWeight:800,fontSize:14,color:"#1e3a5f"}}>Deep Haven</div><div style={{fontSize:11,color:"#888"}}>Equity Advantage HELOC</div></div>
+                </div>
+                <div style={{fontSize:12,fontWeight:700,color:result.figureGood?"#27ae60":"#e74c3c"}}>{result.figureGood?"✓ Eligible":"✗ Does Not Qualify"}</div>
+                {result.figureGood&&<div style={{fontSize:11,color:"#555",marginTop:4}}>Max CLTV: <strong>{result.figureCLTV}%</strong></div>}
+                {!result.figureGood&&result.figureIssues.map((iss,i)=><div key={i} style={{fontSize:11,color:"#c0392b",marginTop:4}}>• {iss}</div>)}
+                {result.figureWarnings&&result.figureWarnings.map((w,i)=><div key={i} style={{fontSize:11,color:"#856404",marginTop:4,background:"#fffbe6",borderRadius:6,padding:"3px 7px"}}>{w}</div>)}
+              </div>
+            </div>
+            <div style={{borderRadius:14,padding:18,background:(result.nftyGood||result.figureGood)?"#1e3a5f":"#c0392b"}}>
+              <div style={{fontWeight:800,color:"#f0c040",fontSize:15,marginBottom:6}}>
+                {result.nftyGood&&result.figureGood?"🏆 Both qualify — go with NFTY first":result.nftyGood?"⚡ Go with NFTY (Homebridge)":result.figureGood?"📊 Go with Deep Haven":"🚫 Neither HELOC qualifies"}
+              </div>
+              <div style={{fontSize:13,color:"#a0b4cc",lineHeight:1.6}}>
+                {result.nftyGood&&result.figureGood?"Both HELOCs work. NFTY is our primary — start there. Deep Haven is your backup.":result.nftyGood?"NFTY is the move. Start the prequal now.":result.figureGood?"NFTY doesn't work here but Deep Haven does.":"Neither HELOC qualifies. Review issues above and consider other programs."}
+              </div>
+            </div>
+            <div style={{marginTop:16,background:"#f8faff",borderRadius:12,padding:16,border:"1px solid #dce8ff"}}>
+              <div style={{fontWeight:700,color:"#1e3a5f",fontSize:13,marginBottom:10}}>📋 Key Differences — NFTY vs Deep Haven</div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                {[["Min FICO","640 (NFTY) / 640 primary (Deep Haven)"],["Max Loan","$500K (NFTY) / $750K (Deep Haven)"],["Max CLTV Primary","80% (NFTY) / 85% (Deep Haven)"],["3rd Lien","❌ NFTY / ✅ Deep Haven (primary only)"],["Initial Draw","75% min (NFTY) / 100% required (Deep Haven)"],["Title Seasoning","None (NFTY) / 90 days purchase (Deep Haven)"],["EPO","None (NFTY) / ⚠️ >90% paid in 16 wks (Deep Haven)"],["Origination Fee","2.74% (NFTY) / 2.99% (Deep Haven)"],["LLCs","❌ Ineligible on both"],["Debt Payoff DTI","Revolving + Installment (NFTY) / Revolving only (Deep Haven)"]].map(([k,v],i)=>(
+                  <div key={i} style={{background:"#fff",borderRadius:8,padding:"8px 10px",border:"1px solid #eef2ff"}}>
+                    <div style={{fontWeight:700,color:"#5a7a9f",fontSize:10,marginBottom:2}}>{k}</div>
+                    <div style={{fontSize:12,color:"#1e3a5f"}}>{v}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function NurtureModal({onClose}){
+  const [tab,setTab]=useState("matrix");
+  const tabS=t=>({flex:1,padding:"8px 0",border:"none",borderRadius:8,cursor:"pointer",fontWeight:700,fontSize:12,background:tab===t?"#c0392b":"#fff0ee",color:tab===t?"#fff":"#c0392b"});
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.55)",zIndex:1200,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
+      <div style={{background:"#fff",borderRadius:"20px 20px 0 0",width:"100%",maxWidth:720,maxHeight:"90vh",overflowY:"auto",padding:24}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+          <h2 style={{margin:0,fontSize:17,color:"#c0392b",fontWeight:800}}>🌱 Nurture Framework</h2>
+          <button onClick={onClose} style={{background:"none",border:"none",fontSize:22,cursor:"pointer",color:"#aaa"}}>✕</button>
+        </div>
+        <div style={{background:"#fff3cd",border:"1px solid #f0c040",borderRadius:12,padding:"12px 16px",marginBottom:16,display:"flex",gap:10,alignItems:"flex-start"}}>
+          <span style={{fontSize:20}}>⚠️</span>
+          <div><div style={{fontWeight:700,color:"#856404",fontSize:14}}>$500k Rule</div><div style={{fontSize:13,color:"#856404",marginTop:2}}>Any loan at or above <strong>$500,000</strong> requires <strong>Team Lead / Sales Manager approval</strong> before it can be nurtured.</div></div>
+        </div>
+        <div style={{display:"flex",gap:8,marginBottom:20}}>
+          <button style={tabS("matrix")} onClick={()=>setTab("matrix")}>Nurture Matrix</button>
+          <button style={tabS("tree")} onClick={()=>setTab("tree")}>Decision Tree</button>
+        </div>
+        {tab==="matrix"&&(
+          <div>
+            <p style={{fontSize:13,color:"#555",marginTop:0,marginBottom:12}}>If a lead matches any of these — it's a Nurture.</p>
+            <div style={{borderRadius:12,overflow:"hidden",border:"1px solid #fde8e8"}}>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 2fr",background:"#c0392b",padding:"10px 14px"}}>
+                <div style={{fontWeight:700,color:"#fff",fontSize:12}}>Category</div>
+                <div style={{fontWeight:700,color:"#fff",fontSize:12}}>Threshold</div>
+              </div>
+              {nurtureMatrix.map((r,i)=>(
+                <div key={i} style={{display:"grid",gridTemplateColumns:"1fr 2fr",padding:"10px 14px",background:i%2===0?"#fff":"#fff8f8",borderTop:"1px solid #fde8e8"}}>
+                  <div style={{fontWeight:600,fontSize:13,color:"#1e3a5f"}}>{r.category}</div>
+                  <div style={{fontSize:13,color:"#444"}}>{r.threshold}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {tab==="tree"&&(
+          <div>
+            {decisionTree.map((s,i)=>(
+              <div key={i} style={{marginBottom:14}}>
+                <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
+                  <div style={{minWidth:28,height:28,background:"#c0392b",color:"#fff",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:13,flexShrink:0}}>{i+1}</div>
+                  <div style={{flex:1}}>
+                    <div style={{fontWeight:600,color:"#1e3a5f",fontSize:14,marginBottom:6}}>{s.q}</div>
+                    <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                      <div style={{background:"#fde8e8",borderRadius:8,padding:"6px 12px",fontSize:12,color:"#c0392b",fontWeight:700}}>YES: {s.yes}</div>
+                      <div style={{background:"#eef2ff",borderRadius:8,padding:"6px 12px",fontSize:12,color:"#1e3a5f",fontWeight:700}}>NO: {s.no}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const ROW_COLORS=["#4a7fd4","#8e44ad","#27ae60","#e67e22","#c0392b"];
+const ROW_LIGHT=["#d6e8ff","#ead6ff","#d6f5e3","#fde8cc","#fdd6d6"];
+const LETTERS=["S","L","I","C","E"];
+const makeBubbles=()=>LETTERS.map(l=>Array(8).fill(null).map(()=>({letter:l,popped:false})));
+
+function BubbleWrap({onClose,completions,onComplete}){
+  const [bubbles,setBubbles]=useState(makeBubbles);
+  const [done,setDone]=useState(false);
+  const [time,setTime]=useState(0);
+  const [running,setRunning]=useState(false);
+  const [bestTime,setBestTime]=useState(null);
+  const timerRef=useRef(null);
+  useEffect(()=>{
+    if(running){timerRef.current=setInterval(()=>setTime(t=>t+10),10);}
+    else{clearInterval(timerRef.current);}
+    return()=>clearInterval(timerRef.current);
+  },[running]);
+  const fmtTime=ms=>{const s=Math.floor(ms/1000),c=Math.floor((ms%1000)/10);return s+"."+String(c).padStart(2,"0")+"s";};
+  const pop=(ri,ci)=>{
+    setBubbles(prev=>{
+      const next=prev.map(r=>r.map(b=>({...b})));
+      if(next[ri][ci].popped)return next;
+      if(!running&&!done)setRunning(true);
+      next[ri][ci].popped=true;
+      if(next.every(r=>r.every(b=>b.popped))){setRunning(false);setDone(true);onComplete();setBestTime(p=>p===null||time+10<p?time+10:p);}
+      return next;
+    });
+  };
+  const reset=()=>{setBubbles(makeBubbles());setDone(false);setTime(0);setRunning(false);};
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.55)",zIndex:1100,display:"flex",alignItems:"center",justifyContent:"center"}}>
+      <div style={{background:"#fff",borderRadius:24,padding:24,width:340,boxShadow:"0 8px 40px rgba(0,0,0,0.25)"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+          <span style={{fontWeight:700,color:"#1e3a5f",fontSize:16}}>🫧 SLICE Bubble Wrap</span>
+          <button onClick={onClose} style={{background:"none",border:"none",fontSize:20,cursor:"pointer",color:"#aaa"}}>✕</button>
+        </div>
+        <p style={{fontSize:12,color:"#999",margin:"0 0 14px 0"}}>Pop all the bubbles — take a breath between calls 😌</p>
+        <div style={{background:"#1e3a5f",borderRadius:10,padding:"8px 14px",marginBottom:16,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <span style={{color:"#a0b4cc",fontSize:12,fontWeight:600}}>TIMES COMPLETED</span>
+          <span style={{color:"#f0c040",fontSize:22,fontWeight:800}}>{completions}</span>
+        </div>
+        <div style={{display:"flex",gap:8,marginBottom:16}}>
+          <div style={{flex:1,background:"#f0f4ff",borderRadius:10,padding:"10px 14px",textAlign:"center"}}><div style={{fontSize:11,color:"#5a7a9f",fontWeight:600,marginBottom:2}}>CURRENT</div><div style={{fontSize:20,fontWeight:800,color:running?"#27ae60":done?"#4a7fd4":"#1e3a5f"}}>{fmtTime(time)}</div></div>
+          <div style={{flex:1,background:"#f0f4ff",borderRadius:10,padding:"10px 14px",textAlign:"center"}}><div style={{fontSize:11,color:"#5a7a9f",fontWeight:600,marginBottom:2}}>BEST</div><div style={{fontSize:20,fontWeight:800,color:"#f0c040"}}>{bestTime!==null?fmtTime(bestTime):"—"}</div></div>
+        </div>
+        <div style={{display:"flex",flexDirection:"column",gap:6}}>
+          {bubbles.map((row,ri)=>(
+            <div key={ri} style={{display:"flex",alignItems:"center",gap:5}}>
+              <div style={{width:16,fontWeight:800,fontSize:13,color:ROW_COLORS[ri],textAlign:"center"}}>{LETTERS[ri]}</div>
+              <div style={{display:"flex",gap:4,flex:1}}>
+                {row.map((b,ci)=>(
+                  <button key={ci} onClick={()=>pop(ri,ci)} style={{flex:1,aspectRatio:"1",borderRadius:"50%",border:"none",cursor:b.popped?"default":"pointer",background:b.popped?"#f0f4ff":ROW_LIGHT[ri],boxShadow:b.popped?"none":"0 3px 0 "+ROW_COLORS[ri],transform:b.popped?"scale(0.82)":"scale(1)",transition:"all 0.08s",fontSize:b.popped?9:12,fontWeight:800,color:b.popped?"#ccc":ROW_COLORS[ri]}}>
+                    {b.popped?"·":b.letter}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+        {done&&(
+          <div style={{textAlign:"center",marginTop:18}}>
+            <div style={{fontSize:28}}>🫧</div>
+            <div style={{fontWeight:800,color:"#27ae60",fontSize:15}}>All popped! Back to it 💪</div>
+            <div style={{fontSize:18,fontWeight:800,color:"#4a7fd4",marginTop:4}}>{fmtTime(time)}</div>
+            {bestTime===time&&<div style={{fontSize:12,color:"#f0c040",fontWeight:700,marginTop:2}}>🏆 New best time!</div>}
+            <div style={{fontSize:12,color:"#999",margin:"4px 0 12px"}}>Completed {completions} time{completions!==1?"s":""}.</div>
+            <button onClick={reset} style={{background:"#1e3a5f",color:"#fff",border:"none",borderRadius:10,padding:"10px 24px",fontWeight:700,cursor:"pointer",fontSize:14}}>Pop Again 🫧</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const lbl={fontSize:12,fontWeight:600,color:"#5a7a9f",marginTop:10,display:"block"};
+const inpS={width:"100%",padding:"8px 10px",borderRadius:8,border:"1px solid #dce8ff",fontSize:13,boxSizing:"border-box",marginTop:4};
+const resBox={background:"#1e3a5f",borderRadius:12,padding:16,marginTop:16};
+const resLbl={fontSize:11,color:"#a0b4cc",fontWeight:600,textTransform:"uppercase"};
+const resVal={fontSize:22,fontWeight:800,color:"#fff",marginTop:2};
+const resSub={fontSize:12,color:"#a0b4cc",marginTop:6};
+const fmt=n=>isNaN(n)?"—":"$"+Number(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+
+function StandardCalc(){
+  const [display,setDisplay]=useState("0");
+  const [expr,setExpr]=useState("");
+  const [justEvaled,setJustEvaled]=useState(false);
+  const stateRef=useRef({display:"0",expr:"",justEvaled:false});
+  stateRef.current={display,expr,justEvaled};
+  const handleKey=useCallback((k)=>{
+    const{display:d,expr:e,justEvaled:je}=stateRef.current;
+    if(k==="C"){setDisplay("0");setExpr("");setJustEvaled(false);return;}
+    if(k==="⌫"){setDisplay(d.length>1?d.slice(0,-1):"0");return;}
+    if(k==="="){try{const result=Function('"use strict";return('+(e+d).replace(/×/g,"*").replace(/÷/g,"/")+')')(  );const rounded=parseFloat(result.toFixed(10));setDisplay(isFinite(rounded)?String(rounded):"Error");setExpr("");setJustEvaled(true);}catch{setDisplay("Error");setExpr("");}return;}
+    if(k==="%"){setDisplay(String(parseFloat(d)/100));return;}
+    if(k==="+/-"){setDisplay(d.startsWith("-")?d.slice(1):"-"+d);return;}
+    if(["+","-","×","÷"].includes(k)){setExpr(e+d+k);setDisplay("0");setJustEvaled(false);return;}
+    if(k==="."){if(je){setDisplay("0.");setJustEvaled(false);return;}setDisplay(d.includes(".")?d:d+".");return;}
+    if(je){setDisplay(k);setJustEvaled(false);return;}
+    setDisplay(d==="0"?k:d+k);
+  },[]);
+  const fmtD=d=>{if(d==="Error")return"Error";const p=d.split(".");p[0]=p[0].replace(/\B(?=(\d{3})+(?!\d))/g,",");return p.join(".");};
+  const topRow=["C","+/-","%"];
+  const leftRows=[["7","8","9"],["4","5","6"],["1","2","3"],["0",".","⌫"]];
+  const rightCol=["÷","×","-","+","="];
+  const btnS=k=>({width:"100%",padding:"15px 0",borderRadius:12,border:"none",cursor:"pointer",fontWeight:700,fontSize:16,background:["+","-","×","÷"].includes(k)?"#1e3a5f":k==="="?"#f0c040":["C","+/-","%","⌫"].includes(k)?"#dce8ff":"#f0f4ff",color:["+","-","×","÷"].includes(k)?"#fff":k==="="?"#1e3a5f":"#1e3a5f"});
+  return(
+    <div style={{maxWidth:340,margin:"0 auto"}}>
+      <div style={{background:"#1e3a5f",borderRadius:14,padding:"16px 20px",textAlign:"right",marginBottom:14}}>
+        <div style={{fontSize:display.length>12?22:32,fontWeight:800,color:"#fff",wordBreak:"break-all"}}>{fmtD(display)}</div>
+      </div>
+      <div style={{display:"flex",gap:8}}>
+        <div style={{flex:3,display:"flex",flexDirection:"column",gap:8}}>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>{topRow.map(k=><button key={k} onClick={()=>handleKey(k)} style={btnS(k)}>{k}</button>)}</div>
+          {leftRows.map((row,ri)=><div key={ri} style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>{row.map(k=><button key={k} onClick={()=>handleKey(k)} style={btnS(k)}>{k}</button>)}</div>)}
+        </div>
+        <div style={{flex:1,display:"flex",flexDirection:"column",gap:8}}>{rightCol.map(k=><button key={k} onClick={()=>handleKey(k)} style={{...btnS(k),flex:1,padding:"0"}}>{k}</button>)}</div>
+      </div>
+    </div>
+  );
+}
+
+function CalcModal({onClose}){
+  const [tab,setTab]=useState("standard");
+  const [hAmount,setHAmount]=useState("");const [hRate,setHRate]=useState("");const [hYears,setHYears]=useState("");
+  const [ccards,setCcards]=useState([{bal:"",rate:"",min:""}]);
+  const [cBalance,setCBalance]=useState("");const [cRate,setCRate]=useState("");const [cYears,setCYears]=useState("");
+  const addCard=()=>setCcards([...ccards,{bal:"",rate:"",min:""}]);
+  const updCard=(i,k,v)=>{const c=[...ccards];c[i][k]=v;setCcards(c);};
+  const remCard=i=>setCcards(ccards.filter((_,idx)=>idx!==i));
+  const calcPmt=(amt,rate,yrs)=>{const p=parseFloat(amt),r=parseFloat(rate)/100/12,n=parseFloat(yrs)*12;if(!p||!r||!n)return null;return(p*r*Math.pow(1+r,n))/(Math.pow(1+r,n)-1);};
+  const helocPmt=calcPmt(hAmount,hRate,hYears);
+  const ioPmt=hAmount&&hRate?parseFloat(hAmount)*(parseFloat(hRate)/100/12):null;
+  const totalMin=ccards.reduce((s,c)=>s+(parseFloat(c.min)||0),0);
+  const totalBal=ccards.reduce((s,c)=>s+(parseFloat(c.bal)||0),0);
+  const avgRate=ccards.filter(c=>c.rate).length?ccards.reduce((s,c)=>s+(parseFloat(c.rate)||0),0)/ccards.filter(c=>c.rate).length:0;
+  const consPmt=calcPmt(cBalance||totalBal,cRate,cYears);
+  const savings=consPmt?totalMin-consPmt:null;
+  const tabS=t=>({flexShrink:0,padding:"8px 14px",border:"none",borderRadius:8,cursor:"pointer",fontWeight:700,fontSize:12,background:tab===t?"#1e3a5f":"#eef2ff",color:tab===t?"#fff":"#555",whiteSpace:"nowrap"});
+  const inp=(val,set,ph)=><input value={val} onChange={e=>set(e.target.value)} placeholder={ph} style={{width:"100%",padding:"8px 10px",borderRadius:8,border:"1px solid #dce8ff",fontSize:14,boxSizing:"border-box",marginTop:4}}/>;
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:1000,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
+      <div style={{background:"#fff",borderRadius:"20px 20px 0 0",width:"100%",maxWidth:720,maxHeight:"90vh",overflowY:"auto",padding:24}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+          <h2 style={{margin:0,fontSize:17,color:"#1e3a5f",fontWeight:700}}>🧮 Calculator</h2>
+          <button onClick={onClose} style={{background:"none",border:"none",fontSize:22,cursor:"pointer",color:"#aaa"}}>✕</button>
+        </div>
+        <div style={{display:"flex",gap:8,marginBottom:20,overflowX:"auto",paddingBottom:4}}>
+          <button style={tabS("standard")} onClick={()=>setTab("standard")}>Standard</button>
+          <button style={tabS("heloc")} onClick={()=>setTab("heloc")}>HELOC Payment</button>
+          <button style={tabS("cards")} onClick={()=>setTab("cards")}>Credit Cards</button>
+          <button style={tabS("consolidate")} onClick={()=>setTab("consolidate")}>Consolidation</button>
+        </div>
+        {tab==="standard"&&<StandardCalc/>}
+        {tab==="heloc"&&<div>
+          <label style={lbl}>Loan Amount</label>{inp(hAmount,setHAmount,"e.g. 50000")}
+          <label style={lbl}>Interest Rate (%)</label>{inp(hRate,setHRate,"e.g. 8.5")}
+          <label style={lbl}>Term (Years)</label>{inp(hYears,setHYears,"e.g. 10")}
+          {(helocPmt||ioPmt)&&<div style={resBox}><div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
+            {helocPmt&&<div><div style={resLbl}>Est. Monthly Payment</div><div style={resVal}>{fmt(helocPmt)}</div><div style={resSub}>Total over {hYears} yrs: {fmt(helocPmt*hYears*12)}</div></div>}
+            {ioPmt&&<div><div style={resLbl}>Interest Only</div><div style={resVal}>{fmt(ioPmt)}</div></div>}
+          </div></div>}
+        </div>}
+        {tab==="cards"&&<div>
+          {ccards.map((c,i)=>(
+            <div key={i} style={{background:"#f8faff",borderRadius:10,padding:12,marginBottom:10}}>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                <span style={{fontWeight:700,fontSize:13,color:"#1e3a5f"}}>Card {i+1}</span>
+                {ccards.length>1&&<button onClick={()=>remCard(i)} style={{background:"none",border:"none",color:"#c0392b",cursor:"pointer",fontSize:13}}>Remove</button>}
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
+                <div><label style={lbl}>Balance</label><input value={c.bal} onChange={e=>updCard(i,"bal",e.target.value)} placeholder="e.g. 5000" style={inpS}/></div>
+                <div><label style={lbl}>Rate (%)</label><input value={c.rate} onChange={e=>updCard(i,"rate",e.target.value)} placeholder="e.g. 24" style={inpS}/></div>
+                <div><label style={lbl}>Min Payment</label><input value={c.min} onChange={e=>updCard(i,"min",e.target.value)} placeholder="e.g. 150" style={inpS}/></div>
+              </div>
+            </div>
+          ))}
+          <button onClick={addCard} style={{background:"#eef2ff",border:"none",borderRadius:8,padding:"8px 16px",color:"#1e3a5f",fontWeight:700,cursor:"pointer",fontSize:13,marginBottom:12}}>+ Add Card</button>
+          {totalBal>0&&<div style={resBox}><div style={{display:"flex",justifyContent:"space-between"}}><div><div style={resLbl}>Total Balance</div><div style={resVal}>{fmt(totalBal)}</div></div><div><div style={resLbl}>Total Min.</div><div style={resVal}>{fmt(totalMin)}/mo</div></div><div><div style={resLbl}>Avg. Rate</div><div style={resVal}>{avgRate?avgRate.toFixed(1)+"%":"—"}</div></div></div></div>}
+        </div>}
+        {tab==="consolidate"&&<div>
+          <label style={lbl}>Total Debt to Consolidate</label>
+          <input value={cBalance} onChange={e=>setCBalance(e.target.value)} placeholder={totalBal?"From cards: $"+totalBal.toLocaleString():"e.g. 30000"} style={{...inpS,marginBottom:8}}/>
+          <label style={lbl}>New HELOC Rate (%)</label>{inp(cRate,setCRate,"e.g. 8.5")}
+          <label style={lbl}>Term (Years)</label>{inp(cYears,setCYears,"e.g. 10")}
+          {consPmt&&<div style={resBox}><div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:12}}><div><div style={resLbl}>Current (Cards)</div><div style={resVal}>{fmt(totalMin)}</div></div><div><div style={resLbl}>New (HELOC)</div><div style={resVal}>{fmt(consPmt)}</div></div><div><div style={resLbl}>Monthly Savings</div><div style={{...resVal,color:savings>0?"#f0c040":"#ff8080"}}>{savings!==null?fmt(Math.abs(savings))+(savings>0?" saved":" more"):"—"}</div></div></div>{savings>0&&<div style={resSub}>Annual savings: {fmt(savings*12)}</div>}</div>}
+        </div>}
+      </div>
+    </div>
+  );
+}
+
+function TextPanel(){
+  const [copied1,setCopied1]=useState(false);
+  const [copied2,setCopied2]=useState(false);
+  const copy1=()=>{navigator.clipboard.writeText(textTemplate);setCopied1(true);setTimeout(()=>setCopied1(false),2000);};
+  const copy2=()=>{navigator.clipboard.writeText(loanTimelineTemplate);setCopied2(true);setTimeout(()=>setCopied2(false),2000);};
+  return(
+    <Panel title="💬 Text Templates">
+      <p style={{fontSize:13,color:"#5a7a9f",marginTop:0,marginBottom:20}}>Two ready-to-send templates — copy and customize before sending.</p>
+      <div style={{marginBottom:24}}>
+        <div style={{fontWeight:700,color:"#1e3a5f",fontSize:14,marginBottom:6}}>📲 Intro Text — Send mid-call</div>
+        <div style={{background:"#f0f4ff",border:"1px solid #dce8ff",borderRadius:12,padding:16,fontSize:14,lineHeight:1.8,color:"#222"}}>{textTemplate}</div>
+        <button onClick={copy1} style={{marginTop:12,background:copied1?"#27ae60":"#1e3a5f",color:"#fff",border:"none",borderRadius:8,padding:"10px 20px",cursor:"pointer",fontWeight:600,fontSize:14}}>{copied1?"✅ Copied!":"Copy Text"}</button>
+        <p style={{fontSize:12,color:"#999",marginTop:8}}>Replace [Your Name] with your real name before sending.</p>
+      </div>
+      <div style={{borderTop:"2px solid #dce8ff",paddingTop:24}}>
+        <div style={{fontWeight:700,color:"#1e3a5f",fontSize:14,marginBottom:6}}>📋 Loan Timeline — Send after submission</div>
+        <div style={{background:"#f0f4ff",border:"1px solid #dce8ff",borderRadius:12,padding:16,fontSize:14,lineHeight:1.8,color:"#222",whiteSpace:"pre-wrap"}}>{loanTimelineTemplate}</div>
+        <button onClick={copy2} style={{marginTop:12,background:copied2?"#27ae60":"#1e3a5f",color:"#fff",border:"none",borderRadius:8,padding:"10px 20px",cursor:"pointer",fontWeight:600,fontSize:14}}>{copied2?"✅ Copied!":"Copy Text"}</button>
+        <p style={{fontSize:12,color:"#999",marginTop:8}}>Replace [Borrower Name] with their first name before sending.</p>
+      </div>
+    </Panel>
+  );
+}
+
+function SalesProcessPanel(){
+  const [subTab,setSubTab]=useState("heloc");
+  const tagBg=s=>({known:"#e8f5e9",unknown:"#fff3e0",decision:"#e8eaf6"}[s]||"transparent");
+  const tagColor=s=>({known:"#27ae60",unknown:"#e67e22",decision:"#3949ab"}[s]||"transparent");
+  const tagLabel=s=>({known:"✅ If program is known",unknown:"❓ If program is unknown",decision:"🔀 Decision Point"}[s]||"");
+  return(
+    <Panel title="🗺️ Sales Process">
+      <div style={{display:"flex",gap:8,marginBottom:20}}>
+        <button onClick={()=>setSubTab("heloc")} style={{flex:1,padding:"10px 0",border:"none",borderRadius:10,cursor:"pointer",fontWeight:700,fontSize:13,background:subTab==="heloc"?"#1e3a5f":"#eef2ff",color:subTab==="heloc"?"#fff":"#1e3a5f"}}>⚡ HELOC Process</button>
+        <button onClick={()=>setSubTab("alt")} style={{flex:1,padding:"10px 0",border:"none",borderRadius:10,cursor:"pointer",fontWeight:700,fontSize:13,background:subTab==="alt"?"#8e44ad":"#eef2ff",color:subTab==="alt"?"#fff":"#8e44ad"}}>🔄 Non-NFTY Loans</button>
+      </div>
+      {subTab==="heloc"&&(
+        <div>
+          <div style={{display:"inline-block",background:"#1e3a5f",color:"#f0c040",fontSize:12,fontWeight:700,borderRadius:8,padding:"4px 10px",marginBottom:16}}>🏆 #2 in the country for self-employed loans.</div>
+          {processSteps.map((s,i)=>(
+            <div key={s.step} style={{display:"flex",gap:14,marginBottom:i===processSteps.length-1?0:16}}>
+              <div style={{display:"flex",flexDirection:"column",alignItems:"center"}}>
+                <div style={{minWidth:32,height:32,background:"#1e3a5f",color:"#fff",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:13,flexShrink:0}}>{s.step}</div>
+                {i<processSteps.length-1&&<div style={{width:2,flex:1,background:"#dce8ff",marginTop:4,marginBottom:4}}/>}
+              </div>
+              <div style={{paddingBottom:8}}>
+                <div style={{fontWeight:600,color:"#1e3a5f",fontSize:15}}>{s.title}</div>
+                <div style={{color:"#444",fontSize:13,marginTop:3,lineHeight:1.5}}>{s.detail}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {subTab==="alt"&&(
+        <div>
+          <div style={{display:"inline-block",background:"#8e44ad",color:"#fff",fontSize:11,fontWeight:700,borderRadius:8,padding:"4px 10px",marginBottom:12}}>Bank Statement, DSCR, P&L, Asset, and more.</div>
+          <p style={{fontSize:13,color:"#5a7a9f",marginTop:0,marginBottom:20}}>This flow applies when the borrower doesn't qualify for the automated HELOC.</p>
+          {altProcessSteps.map((s,i)=>(
+            <div key={s.step} style={{display:"flex",gap:14,marginBottom:i===altProcessSteps.length-1?0:16}}>
+              <div style={{display:"flex",flexDirection:"column",alignItems:"center"}}>
+                <div style={{minWidth:32,height:32,background:s.tag==="decision"?"#3949ab":s.tag==="unknown"?"#e67e22":s.tag==="known"?"#27ae60":"#8e44ad",color:"#fff",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:13,flexShrink:0}}>{s.step}</div>
+                {i<altProcessSteps.length-1&&<div style={{width:2,flex:1,background:"#dce8ff",marginTop:4,marginBottom:4}}/>}
+              </div>
+              <div style={{paddingBottom:8,flex:1}}>
+                {s.tag&&<div style={{display:"inline-block",background:tagBg(s.tag),color:tagColor(s.tag),fontSize:11,fontWeight:700,borderRadius:6,padding:"2px 8px",marginBottom:5}}>{tagLabel(s.tag)}</div>}
+                <div style={{fontWeight:600,color:"#1e3a5f",fontSize:15}}>{s.title}</div>
+                <div style={{color:"#444",fontSize:13,marginTop:4,lineHeight:1.6,whiteSpace:"pre-line"}}>{s.detail}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </Panel>
+  );
+}
+
+const dinoMessages=[
+  "Are we swimming? 🏊","Slice n Dice! 🔪","You're cut off on energy drinks 😂",
+  "That last call was bunz, you can do better 💀","Manases is my creator 🧠","6 - 7 📞",
+  "Start the app ON the call! ⚡","Find the pain first 🎯","SLICE it up! 📋",
+  "Stop ghosting your pipeline 👻","Did you send the text yet? 📲","Speed is trust. GO. 🚀",
+  "Every no is one step closer to a yes 💪","The best time to call was yesterday. Second best? RIGHT NOW. 📞",
+  "You eating today or nah? Dial. 🍽️","Your pipeline won't fill itself 🚿",
+  "Be the LO you needed when you were a borrower 🏡","Rejection is just redirection 🔄",
+  "Closed mouths don't get funded 🤐💰","One more call. Just one more. 🎯",
+  "Champions dial through the discomfort 🏆","The rate isn't the problem. Your belief is. 🧠",
+  "Borrow confidence. Fake it till you fund it. 💼",
+  "Your borrower is waiting for someone to believe in them. Be that person. ❤️",
+  "More dials = more deals. Math is math. ➗",
+  "It's giving... funded 💅","No cap, that borrower was built different 🧢",
+  "Lowkey the HELOC just hit different today ✨","Slay the prequal. Period. 💅",
+  "Main character energy only on this floor 🎬","Understood the assignment 📋✅",
+  "POV: You just started the app on the call 🎥","I survived another meeting that could've been an email 📧",
+  "Please hold. My brain is buffering 🔄","Currently accepting snacks as payment 🍕",
+  "Your next deal is one dial away 📞","Pressure makes diamonds. You're in the right place 💎",
+  "You are one conversation away from changing someone's life 🏡",
+  "Discipline is doing it even when you don't feel like it ⚡",
+];
+
+const DINO_SVG=encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 51 60"><style>.d{fill:#535353;}.w{fill:#fff;}</style><rect class="d" x="14" y="20" width="22" height="20"/><rect class="d" x="26" y="12" width="10" height="12"/><rect class="d" x="28" y="6" width="16" height="14"/><rect class="w" x="38" y="9" width="4" height="4"/><rect class="d" x="39" y="10" width="2" height="2"/><rect class="d" x="43" y="16" width="5" height="3"/><rect class="d" x="28" y="30" width="8" height="4"/><rect class="d" x="34" y="34" width="4" height="3"/><rect class="d" x="4" y="28" width="12" height="7"/><rect class="d" x="0" y="32" width="6" height="5"/><rect class="d" x="18" y="40" width="7" height="12"/><rect class="d" x="14" y="50" width="10" height="4"/><rect class="d" x="28" y="40" width="7" height="8"/><rect class="d" x="26" y="46" width="10" height="4"/></svg>`);
+const DINO_SVG2=encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 51 60"><style>.d{fill:#535353;}.w{fill:#fff;}</style><rect class="d" x="14" y="20" width="22" height="20"/><rect class="d" x="26" y="12" width="10" height="12"/><rect class="d" x="28" y="6" width="16" height="14"/><rect class="w" x="38" y="9" width="4" height="4"/><rect class="d" x="39" y="10" width="2" height="2"/><rect class="d" x="43" y="16" width="5" height="3"/><rect class="d" x="28" y="30" width="8" height="4"/><rect class="d" x="34" y="34" width="4" height="3"/><rect class="d" x="4" y="28" width="12" height="7"/><rect class="d" x="0" y="32" width="6" height="5"/><rect class="d" x="18" y="40" width="7" height="8"/><rect class="d" x="16" y="46" width="10" height="4"/><rect class="d" x="28" y="40" width="7" height="12"/><rect class="d" x="26" y="50" width="10" height="4"/></svg>`);
+const CACTUS_SVG=encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 54"><style>.c{fill:#535353;}</style><rect class="c" x="10" y="4" width="8" height="46"/><rect class="c" x="2" y="16" width="10" height="6"/><rect class="c" x="2" y="10" width="6" height="8"/><rect class="c" x="16" y="20" width="10" height="6"/><rect class="c" x="20" y="14" width="6" height="8"/></svg>`);
+
+function DinoRunner({triggerRef}){
+  const [phase,setPhase]=useState("hidden");
+  const [msg,setMsg]=useState("");
+  const [showBubble,setShowBubble]=useState(false);
+  const [legFrame,setLegFrame]=useState(0);
+  const [dinoX,setDinoX]=useState(-120);
+  const [cactusX1,setCactusX1]=useState(null);
+  const [cactusX2,setCactusX2]=useState(null);
+  const scheduleRef=useRef(null);
+  const animRef=useRef(null);
+  const legRef=useRef(null);
+  const phaseRef=useRef(phase);
+  phaseRef.current=phase;
+  const STOP_X=Math.min(window.innerWidth*0.12,80);
+
+  const startDino=useCallback(()=>{
+    if(phaseRef.current!=="hidden")return;
+    setMsg(dinoMessages[Math.floor(Math.random()*dinoMessages.length)]);
+    setCactusX1(window.innerWidth*0.45+Math.random()*60);
+    setCactusX2(window.innerWidth*0.65+Math.random()*60);
+    setDinoX(-120);setShowBubble(false);setPhase("walkin");
+  },[]);
+
+  useEffect(()=>{if(triggerRef)triggerRef.current=startDino;},[startDino,triggerRef]);
+  useEffect(()=>{scheduleRef.current=setTimeout(startDino,45*60*1000);return()=>clearTimeout(scheduleRef.current);},[]);
+
+  useEffect(()=>{
+    if(phase==="walkin"||phase==="walkout"){legRef.current=setInterval(()=>setLegFrame(f=>1-f),180);}
+    else{clearInterval(legRef.current);setLegFrame(0);}
+    return()=>clearInterval(legRef.current);
+  },[phase]);
+
+  useEffect(()=>{
+    if(phase!=="walkin")return;
+    let x=-120;const target=STOP_X;
+    animRef.current=setInterval(()=>{x+=4;setDinoX(x);if(x>=target){clearInterval(animRef.current);setDinoX(target);setPhase("talking");setTimeout(()=>setShowBubble(true),300);setTimeout(()=>{setShowBubble(false);setTimeout(()=>setPhase("walkout"),400);},4500);}},16);
+    return()=>clearInterval(animRef.current);
+  },[phase]);
+
+  useEffect(()=>{
+    if(phase!=="walkout")return;
+    let x=STOP_X;
+    animRef.current=setInterval(()=>{x-=5;setDinoX(x);if(x<-140){clearInterval(animRef.current);setPhase("hidden");setCactusX1(null);setCactusX2(null);scheduleRef.current=setTimeout(startDino,45*60*1000);}},16);
+    return()=>clearInterval(animRef.current);
+  },[phase]);
+
+  if(phase==="hidden")return null;
+  const dinoSrc=`data:image/svg+xml,${legFrame===0?DINO_SVG:DINO_SVG2}`;
+  const cactusSrc=`data:image/svg+xml,${CACTUS_SVG}`;
+  const groundY=88;
+  return(
+    <div style={{position:"fixed",inset:0,bottom:0,zIndex:9999,pointerEvents:"none",overflow:"hidden"}}>
+      <style>{`@keyframes bubblePop{0%{transform:scale(0);opacity:0;}60%{transform:scale(1.1);opacity:1;}100%{transform:scale(1);opacity:1;}}.dino-bubble-in{animation:bubblePop 0.35s ease forwards;}`}</style>
+      <div style={{position:"absolute",bottom:groundY-4,left:0,right:0,height:2,background:"#535353",opacity:0.25}}/>
+      {cactusX1&&<img src={cactusSrc} alt="" style={{position:"absolute",bottom:groundY-2,left:cactusX1,width:36,height:54,imageRendering:"pixelated"}}/>}
+      {cactusX2&&<img src={cactusSrc} alt="" style={{position:"absolute",bottom:groundY-2,left:cactusX2,width:28,height:42,imageRendering:"pixelated"}}/>}
+      <div style={{position:"absolute",bottom:groundY,left:dinoX,display:"flex",flexDirection:"column",alignItems:"flex-start"}}>
+        {showBubble&&(
+          <div className="dino-bubble-in" style={{background:"#1e3a5f",color:"#f0c040",fontWeight:800,fontSize:12,padding:"9px 14px",borderRadius:12,marginBottom:8,marginLeft:4,boxShadow:"0 3px 14px rgba(0,0,0,0.25)",fontFamily:"system-ui,sans-serif",maxWidth:240,lineHeight:1.4,position:"relative"}}>
+            {msg}
+            <div style={{position:"absolute",bottom:-7,left:18,width:0,height:0,borderLeft:"7px solid transparent",borderRight:"7px solid transparent",borderTop:"7px solid #1e3a5f"}}/>
+          </div>
+        )}
+        <img src={dinoSrc} alt="dino" style={{width:64,height:64,imageRendering:"pixelated",transform:phase==="walkout"?"scaleX(-1)":"scaleX(1)"}}/>
+      </div>
+    </div>
+  );
+}
+
+function HomePage({onNav,tipIdx,onNextTip}){
+  return(
+    <div>
+      <div style={{background:"#1e3a5f",borderRadius:20,padding:"28px 24px",marginBottom:16}}>
+        <h1 style={{fontSize:24,fontWeight:800,color:"#fff",margin:"0 0 6px"}}>The Truss Handbook</h1>
+        <p style={{fontSize:13,color:"#a0b4cc",margin:"0 0 20px"}}>Everything you need. One place.</p>
+        <div style={{background:"rgba(255,255,255,0.07)",borderRadius:12,padding:"14px 16px",borderLeft:"3px solid #f0c040"}}>
+          <p style={{margin:0,color:"#f0c040",fontStyle:"italic",fontWeight:600,fontSize:14,lineHeight:1.6}}>"The best loan officers don't wait for the right moment — they create it."</p>
+        </div>
+      </div>
+      <div onClick={onNextTip} style={{background:"#fff",borderRadius:16,padding:"18px 20px",border:"1px solid #dce8ff",marginBottom:16,cursor:"pointer",userSelect:"none"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+          <span style={{fontWeight:700,color:"#1e3a5f",fontSize:14}}>💡 Quick Tip</span>
+          <span style={{fontSize:11,color:"#bbb"}}>tap for next →</span>
+        </div>
+        <p style={{margin:0,fontSize:14,color:"#333",lineHeight:1.6}}>{tips[tipIdx]}</p>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+        {[
+          {emoji:"🗺️",title:"Sales Process",desc:"HELOC + Non-NFTY flow",color:"#4a7fd4",id:"process"},
+          {emoji:"📁",title:"Loan Process",desc:"After submission",color:"#27ae60",id:"loanprocess"},
+          {emoji:"📞",title:"Call Script",desc:"What to say & when",color:"#16a085",id:"script"},
+          {emoji:"🛡️",title:"Objections",desc:"21 handled & ready",color:"#e67e22",id:"objections"},
+          {emoji:"💬",title:"Text Template",desc:"Send mid-call",color:"#c0392b",id:"text"},
+          {emoji:"📋",title:"Our Programs",desc:"Every product we offer",color:"#16a085",id:"programs"},
+        ].map((c,i)=>(
+          <div key={i} onClick={()=>onNav(c.id)} style={{background:"#fff",borderRadius:14,padding:"16px 14px",border:"1px solid #dce8ff",cursor:"pointer"}}>
+            <div style={{fontSize:24}}>{c.emoji}</div>
+            <div style={{fontWeight:700,fontSize:14,color:"#1e3a5f",marginTop:6}}>{c.title}</div>
+            <div style={{fontSize:12,color:"#999",marginTop:2}}>{c.desc}</div>
+            <div style={{marginTop:10,height:3,borderRadius:3,background:c.color,width:"40%"}}/>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function App(){
+  const [active,setActive]=useState(null);
+  const [tipIdx,setTipIdx]=useState(0);
+  const [search,setSearch]=useState("");
+  const [activeTag,setActiveTag]=useState("All");
+  const [openObj,setOpenObj]=useState(null);
+  const [openProg,setOpenProg]=useState(null);
+  const [showCalc,setShowCalc]=useState(false);
+  const [showBubble,setShowBubble]=useState(false);
+  const [showNurture,setShowNurture]=useState(false);
+  const [showNfty,setShowNfty]=useState(false);
+  const [nftyForm,setNftyForm]=useState({...BLANK_FORM});
+  const [nftyResult,setNftyResult]=useState(null);
+  const [completions,setCompletions]=useState(0);
+  const dinoTriggerRef=useRef(null);
+  const filtered=objections.filter(o=>(activeTag==="All"||o.tag===activeTag)&&o.q.toLowerCase().includes(search.toLowerCase()));
+
+  return(
+    <div style={{fontFamily:"system-ui,sans-serif",background:"#f0f4ff",minHeight:"100vh",padding:"20px 16px 120px"}}>
+      <div style={{maxWidth:720,margin:"0 auto"}}>
+        {active!==null&&(
+          <div style={{display:"flex",gap:8,overflowX:"auto",marginBottom:20,paddingBottom:4}}>
+            <button onClick={()=>setActive(null)} style={{flexShrink:0,background:"#fff",color:"#1e3a5f",border:"2px solid #dce8ff",borderRadius:12,padding:"10px 16px",cursor:"pointer",fontWeight:700,fontSize:13}}>← Home</button>
+            {navItems.map(n=>(
+              <button key={n.id} onClick={()=>setActive(n.id)} style={{flexShrink:0,background:active===n.id?"#1e3a5f":"#fff",color:active===n.id?"#fff":"#1e3a5f",border:"2px solid "+(active===n.id?"#1e3a5f":"#dce8ff"),borderRadius:12,padding:"10px 16px",cursor:"pointer",fontWeight:700,fontSize:13,whiteSpace:"nowrap"}}>
+                {n.emoji} {n.label}
+              </button>
+            ))}
+          </div>
+        )}
+        {active===null&&<HomePage onNav={setActive} tipIdx={tipIdx} onNextTip={()=>setTipIdx(t=>(t+1)%tips.length)}/>}
+        {active==="process"&&<SalesProcessPanel/>}
+        {active==="loanprocess"&&(
+          <Panel title="📁 Loan Process" badge="⏱️ 25–30 days from submission to funding">
+            <p style={{fontSize:13,color:"#5a7a9f",marginTop:0,marginBottom:20}}>Know this cold — your borrower will ask, and your answer builds trust.</p>
+            {loanProcessSteps.map((s,i)=>(
+              <div key={s.step} style={{display:"flex",gap:14,marginBottom:i===loanProcessSteps.length-1?0:16}}>
+                <div style={{display:"flex",flexDirection:"column",alignItems:"center"}}>
+                  <div style={{minWidth:36,height:36,background:s.funded?"#f0c040":"#1e3a5f",color:s.funded?"#1e3a5f":"#fff",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:15,flexShrink:0}}>{s.icon}</div>
+                  {i<loanProcessSteps.length-1&&<div style={{width:2,flex:1,background:"#dce8ff",marginTop:4,marginBottom:4}}/>}
+                </div>
+                <div style={{paddingBottom:8,flex:1}}>
+                  <div style={{fontWeight:700,color:s.funded?"#f0c040":"#1e3a5f",fontSize:15}}>Step {s.step}: {s.title}</div>
+                  <div style={{color:"#444",fontSize:13,marginTop:4,lineHeight:1.6}}>{s.detail}</div>
+                </div>
+              </div>
+            ))}
+            <div style={{background:"#1e3a5f",borderRadius:12,padding:"16px 18px",marginTop:20,textAlign:"center"}}>
+              <div style={{fontSize:28,marginBottom:6}}>🎉</div>
+              <div style={{fontWeight:800,color:"#f0c040",fontSize:16}}>Funded = Done</div>
+              <div style={{fontSize:13,color:"#a0b4cc",marginTop:4}}>Average timeline: 25–30 days from submission to funding.</div>
+            </div>
+          </Panel>
+        )}
+        {active==="script"&&(
+          <Panel title="📞 Call Script">
+            {scriptSections.map(s=>(
+              <div key={s.label} style={{marginBottom:20}}>
+                <div style={{fontWeight:700,color:"#1e3a5f",fontSize:13,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>{s.label}</div>
+                {s.lines.map((l,i)=><div key={i} style={{background:"#f0f4ff",borderLeft:"3px solid #4a7fd4",borderRadius:"0 8px 8px 0",padding:"10px 12px",marginBottom:8,fontSize:14,color:"#222",lineHeight:1.6}}>{l}</div>)}
+              </div>
+            ))}
+          </Panel>
+        )}
+        {active==="objections"&&(
+          <Panel title="🛡️ Objection Handlers">
+            <div style={{background:"#1e3a5f",borderRadius:10,padding:"12px 16px",marginBottom:16,textAlign:"center"}}>
+              <span style={{color:"#f0c040",fontStyle:"italic",fontSize:13,fontWeight:600}}>"Every objection is simply a request for more certainty."</span>
+            </div>
+            <input placeholder="🔍 Search objections..." value={search} onChange={e=>{setSearch(e.target.value);setOpenObj(null);}} style={{width:"100%",padding:"10px 12px",borderRadius:8,border:"1px solid #dce8ff",fontSize:14,marginBottom:12,boxSizing:"border-box",outline:"none"}}/>
+            <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:16}}>
+              {tags.map(t=><button key={t} onClick={()=>{setActiveTag(t);setOpenObj(null);}} style={{padding:"5px 12px",borderRadius:20,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,background:activeTag===t?(tagColors[t]||"#1e3a5f"):"#eef2ff",color:activeTag===t?"#fff":"#555"}}>{t}</button>)}
+            </div>
+            {filtered.map((o,i)=>(
+              <div key={i} style={{border:"1px solid #dce8ff",borderRadius:10,marginBottom:10,overflow:"hidden"}}>
+                <button onClick={()=>setOpenObj(openObj===i?null:i)} style={{width:"100%",background:openObj===i?"#1e3a5f":"#fff",border:"none",padding:"12px 14px",cursor:"pointer",textAlign:"left",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+                    <span style={{background:tagColors[o.tag],color:"#fff",fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:10}}>{o.tag}</span>
+                    <span style={{fontWeight:600,fontSize:14,color:openObj===i?"#fff":"#1e3a5f"}}>"{o.q}"</span>
+                  </div>
+                  <span style={{color:openObj===i?"#f0c040":"#aaa",fontSize:16}}>{openObj===i?"▲":"▼"}</span>
+                </button>
+                {openObj===i&&(
+                  <div style={{padding:"12px 14px",background:"#f8faff"}}>
+                    <div style={{fontSize:12,color:"#888",marginBottom:8}}>🧠 <em>{o.psychology}</em></div>
+                    <div style={{background:"#f0fff4",borderLeft:"3px solid #27ae60",borderRadius:"0 8px 8px 0",padding:"10px 12px",fontSize:14,color:"#222",lineHeight:1.6}}>{o.a}</div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </Panel>
+        )}
+        {active==="text"&&<TextPanel/>}
+        {active==="programs"&&(
+          <Panel title="📋 Our Programs">
+            <p style={{fontSize:13,color:"#5a7a9f",marginTop:0,marginBottom:16}}>When the automated HELOC isn't the right fit, here's what else we have.</p>
+            {programs.map((p,i)=>(
+              <div key={i} style={{border:"1px solid #dce8ff",borderRadius:12,marginBottom:12,overflow:"hidden"}}>
+                <button onClick={()=>setOpenProg(openProg===i?null:i)} style={{width:"100%",background:openProg===i?"#1e3a5f":"#fff",border:"none",padding:"14px 16px",cursor:"pointer",textAlign:"left",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:12}}>
+                    <span style={{fontSize:22}}>{p.emoji}</span>
+                    <div>
+                      <div style={{fontWeight:700,fontSize:15,color:openProg===i?"#fff":"#1e3a5f"}}>{p.name}</div>
+                      <span style={{background:p.tagColor,color:"#fff",fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:10,display:"inline-block",marginTop:3}}>{p.tag}</span>
+                    </div>
+                  </div>
+                  <span style={{color:openProg===i?"#f0c040":"#aaa",fontSize:16}}>{openProg===i?"▲":"▼"}</span>
+                </button>
+                {openProg===i&&(
+                  <div style={{padding:"14px 16px",background:"#f8faff"}}>
+                    <div style={{marginBottom:10}}>
+                      <div style={{fontSize:11,fontWeight:700,color:"#5a7a9f",textTransform:"uppercase",marginBottom:4}}>When to use it</div>
+                      <div style={{fontSize:14,color:"#222",lineHeight:1.6}}>{p.when}</div>
+                    </div>
+                    <div style={{marginBottom:12}}>
+                      <div style={{fontSize:11,fontWeight:700,color:"#5a7a9f",textTransform:"uppercase",marginBottom:6}}>Key highlights</div>
+                      <div style={{display:"flex",flexWrap:"wrap",gap:6}}>{p.highlights.map((h,j)=><span key={j} style={{background:"#eef2ff",color:"#1e3a5f",fontSize:12,fontWeight:600,padding:"4px 10px",borderRadius:8}}>{h}</span>)}</div>
+                    </div>
+                    <div style={{background:"#1e3a5f",borderRadius:8,padding:"8px 12px",display:"inline-block",marginBottom:p.transfer?14:0}}>
+                      <span style={{fontSize:11,color:"#a0b4cc",fontWeight:600}}>MIN FICO: </span>
+                      <span style={{fontSize:13,color:"#f0c040",fontWeight:800}}>{p.fico}</span>
+                    </div>
+                    {p.transfer&&(
+                      <div style={{background:p.transfer.color+"15",border:"1px solid "+p.transfer.color+"40",borderRadius:10,padding:14}}>
+                        <div style={{fontSize:12,fontWeight:700,color:p.transfer.color,textTransform:"uppercase",marginBottom:10}}>📲 {p.transfer.label}</div>
+                        <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+                          {p.transfer.contacts.map((c,j)=>(
+                            <div key={j} style={{background:"#fff",borderRadius:10,padding:"8px 14px",border:"1px solid "+p.transfer.color+"40"}}>
+                              <div style={{fontWeight:800,fontSize:14,color:"#1e3a5f"}}>{c.name}</div>
+                              <div style={{fontSize:11,color:"#888",marginTop:2}}>{c.role}</div>
+                            </div>
+                          ))}
+                        </div>
+                        {p.transfer.note&&<div style={{fontSize:12,color:"#666",fontStyle:"italic",marginTop:8}}>⚠️ {p.transfer.note}</div>}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </Panel>
+        )}
+      </div>
+      <div style={{position:"fixed",bottom:24,right:24,display:"flex",flexDirection:"column",gap:10,zIndex:999}}>
+        <button onClick={()=>setShowNfty(true)} style={{background:"linear-gradient(135deg,#1e3a5f,#4a7fd4)",color:"#f0c040",border:"none",borderRadius:"50px",padding:"12px 18px",cursor:"pointer",fontWeight:800,fontSize:13,boxShadow:"0 4px 20px rgba(0,0,0,0.2)"}}>⚡ NFTY?</button>
+        <button onClick={()=>setShowNurture(true)} style={{background:"#c0392b",color:"#fff",border:"none",borderRadius:"50px",padding:"12px 18px",cursor:"pointer",fontWeight:700,fontSize:13,boxShadow:"0 4px 20px rgba(0,0,0,0.15)"}}>🌱 Nurture</button>
+        <button onClick={()=>setShowBubble(true)} style={{background:"#f0c040",color:"#1e3a5f",border:"none",borderRadius:"50px",padding:"12px 18px",cursor:"pointer",fontWeight:700,fontSize:13,boxShadow:"0 4px 20px rgba(0,0,0,0.15)"}}>🫧 SLICE Wrap</button>
+        <button onClick={()=>setShowCalc(true)} style={{background:"#1e3a5f",color:"#fff",border:"none",borderRadius:"50px",padding:"12px 18px",cursor:"pointer",fontWeight:700,fontSize:13,boxShadow:"0 4px 20px rgba(0,0,0,0.15)"}}>🧮 Calculator</button>
+      </div>
+      {showNurture&&<NurtureModal onClose={()=>setShowNurture(false)}/>}
+      {showCalc&&<CalcModal onClose={()=>setShowCalc(false)}/>}
+      {showBubble&&<BubbleWrap onClose={()=>setShowBubble(false)} completions={completions} onComplete={()=>setCompletions(c=>c+1)}/>}
+      {showNfty&&<NftyChecker onClose={()=>setShowNfty(false)} form={nftyForm} setForm={setNftyForm} result={nftyResult} setResult={setNftyResult}/>}
+      <DinoRunner triggerRef={dinoTriggerRef}/>
+      <button onClick={()=>dinoTriggerRef.current&&dinoTriggerRef.current()} style={{position:"fixed",top:0,left:0,width:40,height:40,opacity:0,cursor:"default",zIndex:10000,border:"none",background:"transparent"}}/>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
